@@ -1,0 +1,17 @@
+datasources:
+  - name: Victoria Metrics
+    type: prometheus
+    uid: 45e29bc7-871d-4601-9f47-ccefc0d460fb
+    access: proxy
+    url: http://victoria-metrics:8428
+    isDefault: true
+    editable: true
+    jsonData:
+      httpMethod: POST
+      manageAlerts: true
+      prometheusType: Prometheus
+      prometheusVersion: 2.40.0
+      cacheLevel: 'High'
+      disableMetricsLookup: false
+      incrementalQuery: false
+      exemplarTraceIdDestinations: []

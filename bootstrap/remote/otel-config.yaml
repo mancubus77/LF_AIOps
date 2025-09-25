@@ -3,6 +3,7 @@ receivers:
     protocols:
       grpc: {}
       http: {}
+
   prometheus:
     config:
       scrape_configs:
@@ -10,6 +11,7 @@ receivers:
           scrape_interval: 10s
           static_configs:
             - targets: ['0.0.0.0:8888']
+
   hostmetrics:
     collection_interval: 10s
     scrapers:
@@ -22,6 +24,11 @@ receivers:
       load:
 
 processors:
+  # Add hostname to the metrics
+  resourcedetection/system:
+    detectors: [system]
+    system:
+      hostname_sources: [os]
   batch:
     send_batch_size: 1024
     timeout: 10s
@@ -30,22 +37,39 @@ exporters:
   debug:
     verbosity: detailed
 
-  otlp:
-    endpoint: "x.x.x.x:4317" #your centralised collection location
+  # otlp:
+  #   endpoint: "x.x.x.x:4317" #your centralised collection location
+  #   tls:
+  #     insecure: true
+
+  influxdb:
+    endpoint: "http://victoria-metrics:8428"
+    bucket: otel
+    org: lf-aiops
+    timeout: 10s
+
+  prometheusremotewrite:
+    endpoint: "http://victoria-metrics:8428/api/v1/write"
     tls:
       insecure: true
+    timeout: 30s
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 300s
 
 service:
   pipelines:
-    traces:
-      receivers: [otlp]
-      processors: [batch]
-      exporters: [debug, otlp]
+    # traces:
+    #   receivers: [otlp]
+    #   processors: [batch]
+    #   exporters: [debug, otlp]
     metrics:
-      receivers: [otlp, prometheus, hostmetrics]
-      processors: [batch]
-      exporters: [debug, otlp]
-    logs:
-      receivers: [otlp]
-      processors: [batch]
-      exporters: [debug, otlp]
+      receivers: [otlp, hostmetrics, prometheus]
+      processors: [resourcedetection/system, batch]
+      exporters: [debug, influxdb, prometheusremotewrite]
+    # logs:
+    #   receivers: [otlp]
+    #   processors: [batch]
+    #   exporters: [debug, otlp]
